@@ -1,0 +1,6 @@
+# B站弹幕点歌机器人配置（UTF-8）
+room_id=
+lx_api=http://127.0.0.1:23330
+require_fans_medal=0     #粉丝牌限制  0关闭 1开启
+cooldown_seconds=10    #点歌冷却s
+queue_limit=30             # 点歌队列上限

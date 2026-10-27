@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>点歌展示</title>
+<style>
+*{box-sizing:border-box}
+html,body{margin:0;width:100%;height:100%;background:transparent;color:#fff;font-family:"Microsoft YaHei","Noto Sans SC",sans-serif;overflow:hidden}
+.wrap{width:100%;padding:22px 28px;text-shadow:0 2px 5px rgba(0,0,0,.9),0 0 10px rgba(0,0,0,.65)}
+.line{display:flex;align-items:baseline;gap:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:30px;font-weight:700;line-height:1.5}
+.label{flex:none;color:#ffd66b}
+.song{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.artist{font-size:21px;font-weight:500;color:#e5e7eb}
+.requester{font-size:19px;font-weight:500;color:#ffd66b;margin-left:10px}
+.empty{opacity:.85}
+.queue-title{margin-top:7px;font-size:25px;font-weight:700;line-height:1.45;color:#ffd66b}
+.queue-list{margin-top:2px}
+.queue-item{display:flex;align-items:baseline;gap:10px;min-width:0;white-space:nowrap;overflow:hidden;font-size:22px;font-weight:600;line-height:1.38}
+.num{flex:none;color:#b9c8ff;min-width:30px}
+.queue-song{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.queue-requester{font-size:17px;font-weight:500;color:#ffd66b;margin-left:10px}
+.error{font-size:18px;color:#ffc2c2}
+@media(max-width:800px){.wrap{padding:10px 14px}.line{font-size:23px;gap:9px}.artist{font-size:17px}.requester{font-size:15px;margin-left:6px}.queue-requester{font-size:14px;margin-left:6px}.queue-title{font-size:21px}.queue-item{font-size:18px;line-height:1.35}.num{min-width:24px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div id="playing" class="line"><span class="label">正在播放▶</span><span class="song empty">暂无机器人点播歌曲</span></div>
+  <div class="line"><span class="label">B站歌曲点播指令：</span><span class="song">点歌 歌名 歌手名</span></div>
+  <div class="queue-title">接下来播放</div>
+  <div id="queue-list" class="queue-list"></div>
+  <div id="err" class="error"></div>
+</div>
+<script>
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+async function update(){
+  try{
+    const r=await fetch('/api/queue',{cache:'no-store'});
+    const d=await r.json();
+    if(!r.ok||!d.ok)throw Error(d.message||'接口暂不可用');
+    // 接口恢复后重新显示；程序停止时页面会在请求失败后隐藏全部内容。
+    document.querySelector('.wrap').style.display='block';
+    const c=d.current;
+    const q=Array.isArray(d.queue)?d.queue.slice(0,10):[];
+    document.getElementById('playing').innerHTML=`<span class="label">正在播放▶</span><span class="song ${c?'':'empty'}">${c?esc(c.title):'暂无机器人点播歌曲'}${c&&c.artist?' <span class="artist">- '+esc(c.artist)+'</span>':''}${c&&c.uname?' <span class="requester">'+esc(c.uname)+'</span>':''}</span>`;
+    const list=document.getElementById('queue-list');
+    if(q.length){
+      list.innerHTML=q.map((item,i)=>`<div class="queue-item"><span class="num">${i+1}.</span><span class="queue-song">${esc(item.title)}${item.artist?' <span class="artist">- '+esc(item.artist)+'</span>':''}${item.uname?' <span class="queue-requester">'+esc(item.uname)+'</span>':''}</span></div>`).join('');
+    }else{
+      list.innerHTML='<div class="queue-item empty">暂无待播歌曲</div>';
+    }
+    document.getElementById('err').textContent='';
+  }catch(e){
+    // 机器人停止或本地接口不可访问时，展示页面应为空白。
+    document.querySelector('.wrap').style.display='none';
+  }
+}
+update();
+setInterval(update,2000);
+</script>
+</body>
+</html>
